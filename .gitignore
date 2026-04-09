@@ -5,3 +5,9 @@ data-test-*/
 .env
 .mcpregistry_*
 *.tgz
+
+# Video assets (not part of the MCP server)
+video-assets/
+*.mp4
+*.mp3
+automatia-*.mp4
