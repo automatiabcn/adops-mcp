@@ -1,0 +1,54 @@
+name: adops-mcp
+version: 1.0.0
+description: AI-powered cross-platform ad management for Google Ads and Meta Ads
+author: Automatia BCN
+license: MIT
+transport: stateless_http
+pricing:
+  free:
+    price: 0
+    features:
+      - 1 platform connection
+      - Campaign listing and reporting
+      - Creative specs reference
+      - 50 API calls per day
+  pro:
+    price: 29
+    billing: monthly
+    features:
+      - 2 platform connections (Google + Meta)
+      - Full campaign CRUD
+      - Anomaly detection
+      - Budget optimization
+      - A/B test analysis
+      - 500 API calls per day
+  agency:
+    price: 59
+    billing: monthly
+    features:
+      - Unlimited connections
+      - All Pro features
+      - Spend forecasting
+      - Industry benchmarking
+      - Priority support
+      - 2000 API calls per day
+tools:
+  - platform_connect
+  - campaign_list
+  - campaign_create
+  - campaign_update
+  - campaign_pause_resume
+  - ads_report
+  - budget_analyze
+  - budget_reallocate
+  - audience_insights
+  - creative_specs
+  - anomaly_detect
+  - ab_test_analyze
+  - competitor_benchmark
+  - forecast_spend
+resources:
+  - ads://overview
+  - ads://campaigns
+  - ads://budget
+  - ads://alerts
