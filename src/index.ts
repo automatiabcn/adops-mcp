@@ -1,5 +1,7 @@
+import { createServer } from 'node:http';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -497,9 +499,48 @@ server.registerResource(
 // ── Server startup ──────────────────────────────────────────────────
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('[AdOps MCP] Running on stdio — 14 tools, 4 resources');
+  const isHTTP = process.env.PORT || process.env.MCPIZE;
+
+  if (isHTTP) {
+    // Production: Streamable HTTP for MCPize deployment
+    const port = parseInt(process.env.PORT ?? '8080', 10);
+
+    const httpServer = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', version: '1.0.0' }));
+        return;
+      }
+
+      if ((req.method === 'POST' || req.method === 'GET' || req.method === 'DELETE') && req.url === '/mcp') {
+        try {
+          const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+          try { await server.close(); } catch { /* not connected yet */ }
+          await server.connect(transport);
+          await transport.handleRequest(req, res);
+        } catch (err) {
+          console.error('[AdOps MCP] Request error:', err);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal server error' }));
+          }
+        }
+        return;
+      }
+
+      res.writeHead(404);
+      res.end('Not Found');
+    });
+
+    httpServer.listen(port, () => {
+      console.error(`[AdOps MCP] v1.0.0 running on HTTP port ${port} — 14 tools, 4 resources`);
+    });
+  } else {
+    // Local development: stdio transport
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error('[AdOps MCP] v1.0.0 running on stdio — 14 tools, 4 resources');
+  }
 }
 
 main().catch(console.error);
