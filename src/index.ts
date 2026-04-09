@@ -30,8 +30,9 @@ server.registerTool(
   'platform_connect',
   {
     title: 'Connect Ad Platform',
-    description: 'Register a Google Ads or Meta Ads account connection. Stores the connection for subsequent API calls.',
+    description: 'Register a Google Ads or Meta Ads account connection. Use this when the user wants to connect a new ad platform or check existing connections. Stores credentials for subsequent API calls.',
     inputSchema: PlatformConnectInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, name, account_id }) => {
     try {
@@ -70,6 +71,7 @@ server.registerTool(
     title: 'List Campaigns',
     description: 'List and filter campaigns across all connected ad platforms. Supports filtering by platform, status, name search, and pagination.',
     inputSchema: CampaignListInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, status, query, limit, offset }) => {
     try {
@@ -101,6 +103,7 @@ server.registerTool(
     title: 'Create Campaign',
     description: 'Create a new advertising campaign on Google Ads or Meta Ads. Translates unified parameters into platform-specific settings.',
     inputSchema: CampaignCreateInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async (input) => {
     try {
@@ -169,6 +172,7 @@ server.registerTool(
     title: 'Update Campaign',
     description: 'Update campaign settings including name, budget, status, bidding strategy, and end date.',
     inputSchema: CampaignUpdateInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ campaign_id, ...updates }) => {
     try {
@@ -200,6 +204,7 @@ server.registerTool(
     title: 'Pause or Resume Campaigns',
     description: 'Batch pause or resume multiple campaigns at once. Supports up to 50 campaigns per call.',
     inputSchema: CampaignPauseResumeInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ campaign_ids, action }) => {
     try {
@@ -235,6 +240,7 @@ server.registerTool(
     title: 'Cross-Platform Performance Report',
     description: 'Generate a unified performance report across all connected ad platforms. Includes ROAS, CPC, CTR, conversions, and identifies top performers and underperformers.',
     inputSchema: AdsReportInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, date_range, campaign_ids, sort_by, limit }) => {
     try {
@@ -264,6 +270,7 @@ server.registerTool(
     title: 'Budget Analysis & Optimization',
     description: 'Analyze budget allocation across platforms and campaigns. Provides AI-powered recommendations to maximize ROAS, conversions, or minimize CPA.',
     inputSchema: BudgetAnalyzeInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, optimization_goal }) => {
     try {
@@ -281,6 +288,7 @@ server.registerTool(
     title: 'Reallocate Budget',
     description: 'Transfer daily budget from one campaign to another. Works across platforms.',
     inputSchema: BudgetReallocateInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ from_campaign_id, to_campaign_id, amount }) => {
     try {
@@ -301,6 +309,7 @@ server.registerTool(
     title: 'Audience Insights',
     description: 'Get demographic and behavioral insights about your ad audience. Includes age, gender, location, interest, and device breakdowns.',
     inputSchema: AudienceInsightsInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, campaign_id }) => {
     try {
@@ -318,6 +327,7 @@ server.registerTool(
     title: 'Creative Specifications',
     description: 'Get platform-specific creative requirements for ad formats. Returns image sizes, video specs, text limits, and CTA options for Google and Meta ads.',
     inputSchema: CreativeSpecsInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, format }) => {
     try {
@@ -340,6 +350,7 @@ server.registerTool(
     title: 'Detect Performance Anomalies',
     description: 'Scan campaigns for performance anomalies: CPC spikes, CTR drops, unusual spend patterns. Uses statistical comparison against baseline.',
     inputSchema: AnomalyDetectInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, sensitivity, lookback_days }) => {
     try {
@@ -366,6 +377,7 @@ server.registerTool(
     title: 'A/B Test Analysis',
     description: 'Compare two campaigns as A/B test variants. Calculates statistical significance, determines winner, and provides recommendations.',
     inputSchema: ABTestAnalyzeInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ campaign_id_a, campaign_id_b, primary_metric }) => {
     try {
@@ -383,6 +395,7 @@ server.registerTool(
     title: 'Industry Benchmark Comparison',
     description: 'Compare your ad performance against industry averages. Covers CTR, CPC, CPM, conversion rate, CPA, and ROAS with specific recommendations.',
     inputSchema: CompetitorBenchmarkInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ industry, platform }) => {
     try {
@@ -400,6 +413,7 @@ server.registerTool(
     title: 'Spend & Performance Forecast',
     description: 'Forecast ad spend, impressions, clicks, conversions, and ROAS for the next 7, 14, or 30 days based on historical trends.',
     inputSchema: ForecastSpendInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ period_days, platform }) => {
     try {
@@ -494,6 +508,41 @@ server.registerResource(
       return { contents: [{ uri: uri.href, mimeType: 'application/json', text: JSON.stringify({ error: 'Failed to load alerts' }) }] };
     }
   },
+);
+
+// ── Prompts ──────────────────────────────────────────────────────────
+
+server.registerPrompt(
+  'campaign_audit',
+  { title: 'Campaign Performance Audit', description: 'Comprehensive review of all campaigns across Google Ads and Meta Ads with performance analysis and optimization recommendations.' },
+  async () => ({
+    messages: [{
+      role: 'assistant' as const,
+      content: { type: 'text' as const, text: 'I\'ll run a complete campaign audit across all platforms.\n\n1. Use `ads_report` to pull cross-platform performance\n2. Run `anomaly_detect` to find issues\n3. Use `budget_analyze` to check allocation efficiency\n4. Compare against industry benchmarks with `competitor_benchmark`\n5. Generate optimization recommendations\n\nShall I start the audit?' },
+    }],
+  }),
+);
+
+server.registerPrompt(
+  'weekly_report',
+  { title: 'Weekly Ad Performance Report', description: 'Generate a weekly summary of ad performance across all platforms with trends, alerts, and action items.' },
+  async () => ({
+    messages: [{
+      role: 'assistant' as const,
+      content: { type: 'text' as const, text: 'Let me generate your weekly ad performance report.\n\n1. Pull last 7 days with `ads_report`\n2. Compare with previous week for trends\n3. Check `anomaly_detect` for issues\n4. Forecast next week with `forecast_spend`\n5. Summarize with action items\n\nReady to generate?' },
+    }],
+  }),
+);
+
+server.registerPrompt(
+  'budget_optimizer',
+  { title: 'Budget Optimization', description: 'AI-powered analysis of budget allocation with specific reallocation recommendations to maximize ROAS.' },
+  async () => ({
+    messages: [{
+      role: 'assistant' as const,
+      content: { type: 'text' as const, text: 'I\'ll optimize your ad budget allocation.\n\n1. Analyze current spend with `budget_analyze`\n2. Identify high-ROAS campaigns to scale\n3. Find underperformers to reduce or pause\n4. Calculate cross-platform reallocation\n5. Use `forecast_spend` to project impact\n\nWhat\'s your optimization goal — maximize ROAS, conversions, or minimize CPA?' },
+    }],
+  }),
 );
 
 // ── Server startup ──────────────────────────────────────────────────
