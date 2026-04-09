@@ -505,10 +505,42 @@ async function main() {
     // Production: Streamable HTTP for MCPize deployment
     const port = parseInt(process.env.PORT ?? '8080', 10);
 
+    const serverCard = {
+      serverInfo: { name: 'adops-mcp', version: '1.0.1' },
+      tools: [
+        { name: 'platform_connect', description: 'Register ad platform connection' },
+        { name: 'campaign_list', description: 'List campaigns across platforms' },
+        { name: 'campaign_create', description: 'Create new campaign' },
+        { name: 'campaign_update', description: 'Update campaign settings' },
+        { name: 'campaign_pause_resume', description: 'Batch pause or resume campaigns' },
+        { name: 'ads_report', description: 'Cross-platform performance report' },
+        { name: 'budget_analyze', description: 'Budget analysis with AI recommendations' },
+        { name: 'budget_reallocate', description: 'Transfer budget between campaigns' },
+        { name: 'audience_insights', description: 'Audience demographic analysis' },
+        { name: 'creative_specs', description: 'Platform creative requirements' },
+        { name: 'anomaly_detect', description: 'Performance anomaly detection' },
+        { name: 'ab_test_analyze', description: 'A/B test statistical analysis' },
+        { name: 'competitor_benchmark', description: 'Industry benchmark comparison' },
+        { name: 'forecast_spend', description: 'Spend and conversion forecasting' },
+      ],
+      resources: [
+        { uri: 'ads://overview', description: 'Cross-platform dashboard' },
+        { uri: 'ads://campaigns', description: 'Active campaigns' },
+        { uri: 'ads://budget', description: 'Budget allocation' },
+        { uri: 'ads://alerts', description: 'Performance alerts' },
+      ],
+    };
+
     const httpServer = createServer(async (req, res) => {
       if (req.method === 'GET' && req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', version: '1.0.0' }));
+        res.end(JSON.stringify({ status: 'ok', version: '1.0.1' }));
+        return;
+      }
+
+      if (req.method === 'GET' && req.url === '/.well-known/mcp/server-card.json') {
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify(serverCard));
         return;
       }
 
