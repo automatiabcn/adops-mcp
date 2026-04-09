@@ -12,32 +12,39 @@ import type {
 
 // ── Metric Calculations ─────────────────────────────────────────────
 
+/** Calculate Click-Through Rate (%). Returns 0 if impressions is 0. */
 export function calculateCTR(clicks: number, impressions: number): number {
   return impressions > 0 ? Math.round((clicks / impressions) * 10000) / 100 : 0;
 }
 
+/** Calculate Cost Per Click. Returns 0 if clicks is 0. */
 export function calculateCPC(spend: number, clicks: number): number {
   return clicks > 0 ? Math.round((spend / clicks) * 100) / 100 : 0;
 }
 
+/** Calculate Cost Per Mille (cost per 1000 impressions). Returns 0 if impressions is 0. */
 export function calculateCPM(spend: number, impressions: number): number {
   return impressions > 0 ? Math.round((spend / impressions) * 1000 * 100) / 100 : 0;
 }
 
+/** Calculate Return On Ad Spend. Returns 0 if spend is 0. */
 export function calculateROAS(revenue: number, spend: number): number {
   return spend > 0 ? Math.round((revenue / spend) * 100) / 100 : 0;
 }
 
+/** Calculate Cost Per Acquisition. Returns 0 if conversions is 0. */
 export function calculateCPA(spend: number, conversions: number): number {
   return conversions > 0 ? Math.round((spend / conversions) * 100) / 100 : 0;
 }
 
+/** Calculate Conversion Rate (%). Returns 0 if clicks is 0. */
 export function calculateConversionRate(conversions: number, clicks: number): number {
   return clicks > 0 ? Math.round((conversions / clicks) * 10000) / 100 : 0;
 }
 
 // ── Performance Report ──────────────────────────────────────────────
 
+/** Generate a unified cross-platform performance report with aggregated metrics, top performers, and underperformers. Supports filtering by platform, campaign IDs, date range, and sort order. */
 export async function generatePerformanceReport(
   dateStart: string,
   dateEnd: string,
@@ -187,6 +194,7 @@ export async function generatePerformanceReport(
 
 // ── Audience Insights ───────────────────────────────────────────────
 
+/** Generate audience demographic insights for a platform or specific campaign. Returns age, gender, location, interest, and device breakdowns. */
 export async function generateAudienceInsights(
   platform: Platform,
   campaignId?: string,
@@ -257,6 +265,7 @@ const INDUSTRY_BENCHMARKS: Record<string, { ctr: number; cpc: number; cpm: numbe
   default: { ctr: 2.83, cpc: 2.14, cpm: 15.00, conversion_rate: 3.17, cpa: 75.00, roas: 3.5 },
 };
 
+/** Compare campaign performance against industry averages for 9 verticals. Returns metric-by-metric comparison with ratings and recommendations. */
 export async function generateBenchmark(
   industry: string,
   platformFilter?: Platform,
@@ -323,6 +332,7 @@ export async function generateBenchmark(
 
 // ── Spend Forecast ──────────────────────────────────────────────────
 
+/** Forecast spend, impressions, clicks, conversions, and ROAS for a future period based on historical moving average with variance-based confidence intervals. */
 export async function forecastSpend(
   periodDays: number,
   platformFilter?: Platform,

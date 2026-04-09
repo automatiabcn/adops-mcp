@@ -11,6 +11,7 @@ interface MetricSummary {
   baseline: { cpc: number; ctr: number; spend: number; cpm: number; conversions: number };
 }
 
+/** Scan active campaigns for performance anomalies by comparing recent metrics against baseline. Detects CPC spikes, CTR drops, spend surges, and conversion declines with configurable sensitivity. */
 export async function detectAnomalies(
   sensitivity: 'low' | 'medium' | 'high' = 'medium',
   lookbackDays: number = 7,

@@ -3,6 +3,7 @@ import { calculateROAS, calculateCPA } from './analytics.js';
 import type { BudgetAnalysis, Platform } from '../models/adops.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 
+/** Analyze budget allocation across platforms and campaigns. Returns utilization rates, per-platform breakdown, and AI-powered optimization recommendations (scale, reduce, pause, reallocate). */
 export async function analyzeBudget(
   optimizationGoal: 'maximize_roas' | 'maximize_conversions' | 'minimize_cpa' = 'maximize_roas',
   platformFilter?: Platform,
@@ -158,6 +159,7 @@ export async function analyzeBudget(
   };
 }
 
+/** Transfer daily budget from one campaign to another. Validates budget availability and updates both campaigns atomically. */
 export async function reallocateBudget(
   fromCampaignId: string,
   toCampaignId: string,

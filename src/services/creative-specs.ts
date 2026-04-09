@@ -34,6 +34,7 @@ const CREATIVE_SPECS: CreativeSpec[] = [
     text_specs: { headline_max_chars: 40, description_max_chars: 125, cta_options: ['Shop Now', 'Learn More', 'Sign Up'] } },
 ];
 
+/** Get platform-specific creative specifications filtered by platform and optional format. Returns image sizes, video specs, text limits, and CTA options. */
 export function getCreativeSpecs(platform: Platform, format?: string): CreativeSpec[] {
   let specs = CREATIVE_SPECS.filter((s) => s.platform === platform);
   if (format) {
@@ -42,6 +43,7 @@ export function getCreativeSpecs(platform: Platform, format?: string): CreativeS
   return specs;
 }
 
+/** Get all creative specifications across all platforms and formats. */
 export function getAllCreativeSpecs(): CreativeSpec[] {
   return CREATIVE_SPECS;
 }

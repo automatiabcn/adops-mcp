@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+/** Base error class for AdOps MCP operations. Contains user-friendly message and error code. */
 export class AdOpsError extends Error {
   constructor(
     message: string,
@@ -11,6 +12,7 @@ export class AdOpsError extends Error {
   }
 }
 
+/** Thrown when a requested entity (lead, invoice, campaign, etc.) is not found by ID. */
 export class NotFoundError extends AdOpsError {
   constructor(entity: string, id: string) {
     super(
@@ -21,12 +23,14 @@ export class NotFoundError extends AdOpsError {
   }
 }
 
+/** Thrown when input validation fails (invalid UUID, out-of-range values, etc.). */
 export class ValidationError extends AdOpsError {
   constructor(details: string) {
     super(`Validation error: ${details}`, details, 'VALIDATION');
   }
 }
 
+/** Thrown when attempting to create a duplicate entity. */
 export class DuplicateError extends AdOpsError {
   constructor(field: string, value: string) {
     super(
@@ -37,6 +41,7 @@ export class DuplicateError extends AdOpsError {
   }
 }
 
+/** Thrown when an external platform API call fails. */
 export class PlatformError extends AdOpsError {
   constructor(platform: string, details: string) {
     super(
@@ -49,10 +54,12 @@ export class PlatformError extends AdOpsError {
 
 export const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Validates that a string is a valid UUID v4 format. Throws ValidationError if invalid. */
 export function validateUUID(id: string, entity: string): void {
   if (!RE_UUID.test(id)) throw new ValidationError(`Invalid ${entity} ID format: ${id}`);
 }
 
+/** Converts any error into a standardized MCP tool error response with user-friendly message. */
 export function handleToolError(error: unknown): { content: { type: 'text'; text: string }[]; isError: true } {
   if (error instanceof AdOpsError) {
     return { content: [{ type: 'text' as const, text: error.userMessage }], isError: true };

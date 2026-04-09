@@ -3,6 +3,7 @@ import { calculateCTR, calculateCPA, calculateROAS, calculateConversionRate } fr
 import { NotFoundError } from '../utils/errors.js';
 import type { ABTestResult } from '../models/adops.js';
 
+/** Compare two campaign variants as an A/B test. Uses Z-test for proportions (CTR, conversion rate) and heuristic analysis for continuous metrics (CPA, ROAS). Reports statistical significance, winner, and recommendations. */
 export async function analyzeABTest(
   campaignIdA: string,
   campaignIdB: string,
