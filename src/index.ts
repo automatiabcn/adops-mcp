@@ -22,7 +22,11 @@ import {
   type UnifiedCampaign, type Platform,
 } from './models/adops.js';
 
-const server = new McpServer({ name: 'adops-mcp', version: '1.0.0' });
+const SERVER_VERSION = '1.1.1';
+const TOOL_COUNT = 14;
+const RESOURCE_COUNT = 4;
+
+const server = new McpServer({ name: 'adops-mcp', version: SERVER_VERSION });
 
 // ── Tool 1: platform_connect ────────────────────────────────────────
 
@@ -30,7 +34,7 @@ server.registerTool(
   'platform_connect',
   {
     title: 'Connect Ad Platform',
-    description: 'Register a Google Ads or Meta Ads account connection. Use this when the user wants to connect a new ad platform or check existing connections. Stores credentials for subsequent API calls.',
+    description: 'Register a Google Ads or Meta Ads account in the AdOps workspace so subsequent tools (campaign_list, campaign_create, ads_report) can target it. Input: platform ("google_ads"|"meta_ads"), name (display label), account_id (the external ad account id). Returns the stored connection object with a generated UUID and status="active". Safe to call with the same platform+account_id — returns the existing connection instead of erroring (idempotent).',
     inputSchema: PlatformConnectInputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -69,7 +73,7 @@ server.registerTool(
   'campaign_list',
   {
     title: 'List Campaigns',
-    description: 'List and filter campaigns across all connected ad platforms. Supports filtering by platform, status, name search, and pagination.',
+    description: 'Unified listing of campaigns across Google Ads and Meta Ads in a single view. Optional filters: platform ("google_ads"|"meta_ads"), status ("draft"|"active"|"paused"|"ended"|"archived"), query (free-text over campaign name). Pagination via limit (default 20, max 100) and offset. Returns {total, showing, offset, campaigns[]} where each campaign summary includes id, name, platform, status, objective, daily_budget, currency, and start_date. Use the returned id with campaign_update, campaign_pause_resume, or ab_test_analyze.',
     inputSchema: CampaignListInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -101,7 +105,7 @@ server.registerTool(
   'campaign_create',
   {
     title: 'Create Campaign',
-    description: 'Create a new advertising campaign on Google Ads or Meta Ads. Translates unified parameters into platform-specific settings.',
+    description: 'Create a new ad campaign in the AdOps workspace. Accepts unified parameters (platform, name, objective, bidding_strategy, daily_budget, currency, start_date, end_date, targeting) and stores a canonical UnifiedCampaign record with status="draft". Returns the created campaign summary plus next_steps guidance. Requires an active platform connection (see platform_connect) — will auto-associate the first active connection for the chosen platform.',
     inputSchema: CampaignCreateInputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -170,7 +174,7 @@ server.registerTool(
   'campaign_update',
   {
     title: 'Update Campaign',
-    description: 'Update campaign settings including name, budget, status, bidding strategy, and end date.',
+    description: 'Patch-update an existing campaign. Pass campaign_id (UUID from campaign_list or campaign_create) plus any subset of: name, status, daily_budget, bidding_strategy, end_date. Fields you omit are left unchanged. Returns {message, updated_fields[], campaign} or an error if campaign_id is not found. Prefer campaign_pause_resume for batch status changes.',
     inputSchema: CampaignUpdateInputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -202,7 +206,7 @@ server.registerTool(
   'campaign_pause_resume',
   {
     title: 'Pause or Resume Campaigns',
-    description: 'Batch pause or resume multiple campaigns at once. Supports up to 50 campaigns per call.',
+    description: 'Batch-change the status of up to 50 campaigns in one call. action="pause" sets status to "paused"; action="resume" sets status to "active". Missing campaign_ids are reported in the errors array but do not fail the whole batch. Returns {action, updated, failed, campaigns[], errors?}. Use this for emergency pause during an incident or weekend shutoff.',
     inputSchema: CampaignPauseResumeInputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -238,7 +242,7 @@ server.registerTool(
   'ads_report',
   {
     title: 'Cross-Platform Performance Report',
-    description: 'Generate a unified performance report across all connected ad platforms. Includes ROAS, CPC, CTR, conversions, and identifies top performers and underperformers.',
+    description: 'Aggregate performance metrics across Google Ads and Meta Ads into a single unified view. Input: date_range ({start, end} as YYYY-MM-DD, defaults to the last 7 days), optional platform filter, optional campaign_ids filter, optional sort_by ("spend"|"roas"|"conversions"|"ctr"|"cpc"), and limit. Returns {period, totals (spend, impressions, clicks, conversions, revenue, ROAS, CPC, CTR), by_platform, campaigns[] (sorted per sort_by), top_performers, underperformers}. This is the entry point for most analysis workflows.',
     inputSchema: AdsReportInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -268,7 +272,7 @@ server.registerTool(
   'budget_analyze',
   {
     title: 'Budget Analysis & Optimization',
-    description: 'Analyze budget allocation across platforms and campaigns. Provides AI-powered recommendations to maximize ROAS, conversions, or minimize CPA.',
+    description: 'Analyze how the current ad budget is distributed and produce actionable reallocation recommendations. Input: optimization_goal ("maximize_roas"|"maximize_conversions"|"minimize_cpa") and optional platform filter. Returns {goal, current_allocation (by platform + campaign), recommendations[] (each with campaign_id, current_budget, suggested_budget, rationale, expected_impact), projected_lift}. Pair with budget_reallocate to execute the recommendations.',
     inputSchema: BudgetAnalyzeInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -286,12 +290,18 @@ server.registerTool(
   'budget_reallocate',
   {
     title: 'Reallocate Budget',
-    description: 'Transfer daily budget from one campaign to another. Works across platforms.',
+    description: 'Transfer a dollar amount from one campaign\'s daily budget to another. Works across platforms (e.g. shift $50/day from a Google Ads search campaign to a Meta Ads retargeting campaign). Input: from_campaign_id, to_campaign_id (UUIDs, must differ), amount (positive number in campaign currency). Rejects the call if from_campaign_id === to_campaign_id or if the source campaign would go below zero. Returns the updated budgets for both campaigns.',
     inputSchema: BudgetReallocateInputSchema,
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   },
   async ({ from_campaign_id, to_campaign_id, amount }) => {
     try {
+      if (from_campaign_id === to_campaign_id) {
+        return { content: [{ type: 'text' as const, text: 'from_campaign_id and to_campaign_id must be different campaigns.' }], isError: true };
+      }
+      if (amount <= 0) {
+        return { content: [{ type: 'text' as const, text: 'amount must be greater than zero.' }], isError: true };
+      }
       const result = await reallocateBudget(from_campaign_id, to_campaign_id, amount);
       return { content: [{ type: 'text' as const, text: JSON.stringify({
         message: `Successfully reallocated $${amount}`,
@@ -307,7 +317,7 @@ server.registerTool(
   'audience_insights',
   {
     title: 'Audience Insights',
-    description: 'Get demographic and behavioral insights about your ad audience. Includes age, gender, location, interest, and device breakdowns.',
+    description: 'Demographic and behavioural breakdown of the audiences served by your ads. Input: platform (optional — omit for all platforms) and optional campaign_id to scope to a single campaign. Returns {age_distribution, gender_distribution, top_geos, top_interests, device_breakdown, total_impressions, engagement_rate}. Use when refining targeting or reporting audience coverage.',
     inputSchema: AudienceInsightsInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -325,7 +335,7 @@ server.registerTool(
   'creative_specs',
   {
     title: 'Creative Specifications',
-    description: 'Get platform-specific creative requirements for ad formats. Returns image sizes, video specs, text limits, and CTA options for Google and Meta ads.',
+    description: 'Platform-specific creative requirements for ad formats. Returns the exact image dimensions, aspect ratios, video duration and codec, headline/primary-text character limits, supported CTA buttons, and file size ceilings for each ad format. Input: platform ("google_ads"|"meta_ads") and optional format filter (e.g. "responsive_display", "video", "carousel", "single_image"). Use this before building creatives to avoid rejection at upload time.',
     inputSchema: CreativeSpecsInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -348,9 +358,9 @@ server.registerTool(
   'anomaly_detect',
   {
     title: 'Detect Performance Anomalies',
-    description: 'Scan campaigns for performance anomalies: CPC spikes, CTR drops, unusual spend patterns. Uses statistical comparison against baseline.',
+    description: 'Scan campaigns for statistical anomalies vs. a rolling baseline. Flags CPC spikes, CTR drops, sudden spend surges, and conversion cliffs. Input: sensitivity ("low"|"medium"|"high" — controls the z-score threshold), lookback_days (baseline window, default 14), optional platform filter. Returns {anomalies_found, severity_breakdown (critical|high|medium|low counts), alerts[] (each with campaign_id, metric, baseline, current, deviation, severity, reason)}. Run daily to catch issues before they burn budget.',
     inputSchema: AnomalyDetectInputSchema,
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   async ({ platform, sensitivity, lookback_days }) => {
     try {
@@ -375,7 +385,7 @@ server.registerTool(
   'ab_test_analyze',
   {
     title: 'A/B Test Analysis',
-    description: 'Compare two campaigns as A/B test variants. Calculates statistical significance, determines winner, and provides recommendations.',
+    description: 'Compare two campaigns as A/B test variants and determine statistical significance. Input: campaign_id_a, campaign_id_b, primary_metric ("ctr"|"conversion_rate"|"roas"|"cpc"|"cpa"). Runs a two-proportion z-test (or means comparison for continuous metrics), computes p-value and 95% confidence interval, identifies the winner, and returns {winner, confidence_level, p_value, lift_percent, sample_size_a, sample_size_b, significant (bool), recommendation}. Use with lift ≥5% and p<0.05 as a decision rule.',
     inputSchema: ABTestAnalyzeInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -393,7 +403,7 @@ server.registerTool(
   'competitor_benchmark',
   {
     title: 'Industry Benchmark Comparison',
-    description: 'Compare your ad performance against industry averages. Covers CTR, CPC, CPM, conversion rate, CPA, and ROAS with specific recommendations.',
+    description: 'Compare your ad performance against industry averages for a chosen vertical. Input: industry (e.g. "ecommerce", "saas", "finance", "healthcare", "education", "travel", "real_estate", "legal"), optional platform filter. Returns {industry, your_metrics, benchmarks (CTR, CPC, CPM, conversion_rate, CPA, ROAS industry averages), comparison (percent above/below benchmark per metric), recommendations[]}. Benchmarks are curated static tables — not live market data.',
     inputSchema: CompetitorBenchmarkInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -411,7 +421,7 @@ server.registerTool(
   'forecast_spend',
   {
     title: 'Spend & Performance Forecast',
-    description: 'Forecast ad spend, impressions, clicks, conversions, and ROAS for the next 7, 14, or 30 days based on historical trends.',
+    description: 'Project future ad spend and performance based on recent historical trends. Input: period_days ("7"|"14"|"30") and optional platform filter. Uses moving-average extrapolation of spend, impressions, clicks, conversions, and revenue across the last 14 days. Returns {period_days, platform, projected (spend, impressions, clicks, conversions, revenue, ROAS, CPC, CTR), confidence_level, warnings[]}. Confidence drops when recent data is volatile or campaigns were paused.',
     inputSchema: ForecastSpendInputSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -555,7 +565,7 @@ async function main() {
     const port = parseInt(process.env.PORT ?? '8080', 10);
 
     const serverCard = {
-      serverInfo: { name: 'adops-mcp', version: '1.0.1' },
+      serverInfo: { name: 'adops-mcp', version: SERVER_VERSION },
       tools: [
         { name: 'platform_connect', description: 'Register ad platform connection' },
         { name: 'campaign_list', description: 'List campaigns across platforms' },
@@ -583,7 +593,7 @@ async function main() {
     const httpServer = createServer(async (req, res) => {
       if (req.method === 'GET' && req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', version: '1.0.1' }));
+        res.end(JSON.stringify({ status: 'ok', server: 'adops-mcp', version: SERVER_VERSION }));
         return;
       }
 
@@ -614,13 +624,13 @@ async function main() {
     });
 
     httpServer.listen(port, () => {
-      console.error(`[AdOps MCP] v1.0.0 running on HTTP port ${port} — 14 tools, 4 resources`);
+      console.error(`[AdOps MCP] v${SERVER_VERSION} running on HTTP port ${port} — ${TOOL_COUNT} tools, ${RESOURCE_COUNT} resources`);
     });
   } else {
     // Local development: stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('[AdOps MCP] v1.0.0 running on stdio — 14 tools, 4 resources');
+    console.error(`[AdOps MCP] v${SERVER_VERSION} running on stdio — ${TOOL_COUNT} tools, ${RESOURCE_COUNT} resources`);
   }
 }
 
