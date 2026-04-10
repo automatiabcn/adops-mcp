@@ -1,6 +1,6 @@
 {
   "name": "adops-mcp-server",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "mcpName": "io.github.enzoemir1/adops-mcp",
   "description": "AI-powered cross-platform ad management for MCP. Manage Google Ads and Meta Ads campaigns, analyze performance, optimize budgets, and detect anomalies — all through natural language.",
   "repository": {

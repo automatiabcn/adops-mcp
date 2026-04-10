@@ -11,6 +11,7 @@ import { analyzeBudget, reallocateBudget } from './services/optimizer.js';
 import { detectAnomalies } from './services/anomaly.js';
 import { analyzeABTest } from './services/ab-test.js';
 import { getCreativeSpecs } from './services/creative-specs.js';
+import { seedDemoAdPortfolio } from './services/demo-seed.js';
 import { handleToolError } from './utils/errors.js';
 import {
   PlatformSchema, CampaignStatusSchema, CampaignObjectiveSchema, BiddingStrategySchema,
@@ -22,11 +23,31 @@ import {
   type UnifiedCampaign, type Platform,
 } from './models/adops.js';
 
-const SERVER_VERSION = '1.1.1';
-const TOOL_COUNT = 14;
+const SERVER_VERSION = '1.1.2';
+const TOOL_COUNT = 15;
 const RESOURCE_COUNT = 4;
 
 const server = new McpServer({ name: 'adops-mcp', version: SERVER_VERSION });
+
+// ── Tool 0: ad_demo_seed ────────────────────────────────────────────
+
+server.registerTool(
+  'ad_demo_seed',
+  {
+    title: 'Seed Demo Ad Portfolio',
+    description: 'Create a realistic cross-platform ad portfolio so you can explore AdOps without real Google Ads or Meta Ads credentials. Seeds 2 platform connections (Google + Meta), 8 campaigns covering different objectives and performance tiers (top performers, mid-tier, and underperformers), 30 days of daily metrics per campaign (240 metric rows total), and pre-computed anomaly alerts on the worst performers. Every AdOps tool (ads_report, budget_analyze, anomaly_detect, competitor_benchmark, ab_test_analyze, forecast_spend) will return meaningful output immediately. Safe to call multiple times — each call appends a new portfolio. Returns counts of everything created.',
+    inputSchema: z.object({}),
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  async () => {
+    try {
+      const result = await seedDemoAdPortfolio();
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+      };
+    } catch (e) { return handleToolError(e); }
+  },
+);
 
 // ── Tool 1: platform_connect ────────────────────────────────────────
 
