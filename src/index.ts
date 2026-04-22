@@ -12,6 +12,10 @@ import { detectAnomalies } from './services/anomaly.js';
 import { analyzeABTest } from './services/ab-test.js';
 import { getCreativeSpecs } from './services/creative-specs.js';
 import { seedDemoAdPortfolio } from './services/demo-seed.js';
+import { importGoogleAdsCsv } from './services/csv-import/google-ads.js';
+import { importMetaAdsCsv } from './services/csv-import/meta-ads.js';
+import { exportRecommendations } from './services/export-recommendations.js';
+import { promises as fs } from 'node:fs';
 import { handleToolError } from './utils/errors.js';
 import {
   PlatformSchema, CampaignStatusSchema, CampaignObjectiveSchema, BiddingStrategySchema,
@@ -23,8 +27,8 @@ import {
   type UnifiedCampaign, type Platform,
 } from './models/adops.js';
 
-const SERVER_VERSION = '1.1.2';
-const TOOL_COUNT = 15;
+const SERVER_VERSION = '1.3.0';
+const TOOL_COUNT = 17;
 const RESOURCE_COUNT = 4;
 
 const server = new McpServer({ name: 'adops-mcp', version: SERVER_VERSION });
@@ -35,7 +39,7 @@ server.registerTool(
   'ad_demo_seed',
   {
     title: 'Seed Demo Ad Portfolio',
-    description: 'Create a realistic cross-platform ad portfolio so you can explore AdOps without real Google Ads or Meta Ads credentials. Seeds 2 platform connections (Google + Meta), 8 campaigns covering different objectives and performance tiers (top performers, mid-tier, and underperformers), 30 days of daily metrics per campaign (240 metric rows total), and pre-computed anomaly alerts on the worst performers. Every AdOps tool (ads_report, budget_analyze, anomaly_detect, competitor_benchmark, ab_test_analyze, forecast_spend) will return meaningful output immediately. Safe to call multiple times — each call appends a new portfolio. Returns counts of everything created.',
+    description: 'Create a realistic cross-platform ad portfolio for trying AdOps without real data. Seeds 2 connections (Google + Meta), 8 campaigns across performance tiers, 30 days of daily metrics (240 rows), and pre-computed anomaly alerts. Use this to explore what AdOps can do, then switch to `ad_csv_import` with your real Google/Meta exports for production use. Safe to call multiple times — appends a new portfolio each call.',
     inputSchema: z.object({}),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   },
@@ -44,6 +48,131 @@ server.registerTool(
       const result = await seedDemoAdPortfolio();
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+      };
+    } catch (e) { return handleToolError(e); }
+  },
+);
+
+// ── Tool 0b: ad_csv_import ──────────────────────────────────────────
+
+const CsvImportInputSchema = z.object({
+  platform: z.enum(['google', 'meta']).describe('Which platform the CSV is from: "google" (Google Ads Editor or web UI export) or "meta" (Meta Ads Manager → Export → Campaigns)'),
+  csv_path: z.string().optional().describe('Absolute path to a CSV file on disk. Preferred for large exports. Example: "/Users/you/Downloads/google_ads_report.csv"'),
+  csv_content: z.string().optional().describe('Raw CSV content as a string. Use for small exports pasted directly into the tool.'),
+  connection_name: z.string().optional().describe('Friendly name for this data source (e.g., "ACME Google Account"). Defaults to "<Platform> Ads (CSV Import)".'),
+  account_id: z.string().optional().describe('Your platform account ID (e.g., Google customer ID "123-456-7890" or Meta "act_1234567890"). Used to identify the connection.'),
+});
+
+server.registerTool(
+  'ad_csv_import',
+  {
+    title: 'Import Ad Campaign Data from CSV',
+    description: 'Import real campaign + performance data from a Google Ads or Meta Ads CSV export. After import, every AdOps tool (ads_report, budget_analyze, anomaly_detect, ab_test_analyze, competitor_benchmark, forecast_spend) operates on your real data. No API keys or OAuth required — just export from your ad dashboard and import here.\n\nHOW TO EXPORT:\n  • Google Ads: Reports → Campaign performance → Download → Comma-separated (.csv). Include "Day" segment for daily metrics.\n  • Meta Ads Manager: Campaigns view → Export → Campaign performance (.csv). Check "Include breakdowns: By day" for daily metrics.\n\nINPUT: Provide either csv_path (absolute path to file on disk) OR csv_content (raw CSV string). Optional connection_name groups imports; re-importing with the same name appends new data. Returns a summary with campaigns_imported, metrics_imported, warnings, and the connection id to reference in other tools.',
+    inputSchema: CsvImportInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  async ({ platform, csv_path, csv_content, connection_name, account_id }) => {
+    try {
+      // Validate: exactly one of csv_path or csv_content
+      if (!csv_path && !csv_content) {
+        return handleToolError(new Error('Provide either csv_path (file on disk) or csv_content (raw string).'));
+      }
+      if (csv_path && csv_content) {
+        return handleToolError(new Error('Provide only one of csv_path or csv_content, not both.'));
+      }
+
+      // Load content from file if path given
+      let content: string;
+      if (csv_path) {
+        try {
+          content = await fs.readFile(csv_path, 'utf-8');
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return handleToolError(new Error(`Could not read CSV file at ${csv_path}: ${msg}`));
+        }
+      } else {
+        content = csv_content!;
+      }
+
+      if (content.trim().length === 0) {
+        return handleToolError(new Error('CSV content is empty.'));
+      }
+
+      // Run platform-specific parser
+      const result = platform === 'google'
+        ? importGoogleAdsCsv(content, { connection_name, account_id })
+        : importMetaAdsCsv(content, { connection_name, account_id });
+
+      // Persist to storage: connection first, then campaigns, then metrics batch
+      await storage.addConnection(result.connection);
+      for (const campaign of result.campaigns) {
+        await storage.addCampaign(campaign);
+      }
+      if (result.metrics.length > 0) {
+        await storage.addMetricsBatch(result.metrics);
+      }
+
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            message: `Successfully imported ${result.summary.campaigns_imported} campaigns and ${result.summary.metrics_imported} metric rows from ${platform} CSV.`,
+            connection_id: result.connection.id,
+            connection_name: result.connection.name,
+            summary: result.summary,
+            warnings: result.warnings,
+            next_steps: [
+              `Call "ads_report" with connection_id=${result.connection.id} to see unified performance.`,
+              'Call "anomaly_detect" to surface underperforming campaigns.',
+              'Call "budget_analyze" for optimization recommendations.',
+            ],
+          }, null, 2),
+        }],
+      };
+    } catch (e) { return handleToolError(e); }
+  },
+);
+
+// ── Tool 0c: ads_export_recommendations ────────────────────────────
+
+const ExportRecommendationsInputSchema = z.object({
+  format: z.enum(['google_ads_csv', 'meta_ads_csv', 'json', 'markdown']).describe('Output format. google_ads_csv and meta_ads_csv produce platform-specific bulk-edit CSVs ready to paste into Google Ads Editor or Meta Ads Manager. json is for piping into automations (n8n, Zapier). markdown is for standup docs or tickets.'),
+  output_path: z.string().optional().describe('Absolute file path to write the output to. If omitted, returns the content inline in the tool response.'),
+  optimization_goal: z.enum(['maximize_roas', 'maximize_conversions', 'minimize_cpa']).default('maximize_roas').describe('Goal fed to budget_analyze.'),
+  platform: z.enum(['google', 'meta']).optional().describe('Restrict to a single platform. Required for google_ads_csv or meta_ads_csv to avoid mixed output.'),
+  min_delta_pct: z.number().min(0).max(1).optional().describe('Only include recommendations whose budget change is at least this fraction (e.g. 0.1 = 10%). Filters out minor adjustments.'),
+  limit: z.number().int().min(1).max(100).default(50).describe('Max recommendations to export. Default 50.'),
+});
+
+server.registerTool(
+  'ads_export_recommendations',
+  {
+    title: 'Export Budget Recommendations (Bulk-Edit Ready)',
+    description: 'Export budget_analyze recommendations as a Google Ads Editor CSV, Meta Ads Manager CSV, JSON, or Markdown — so you can take action in one bulk paste instead of editing campaigns one by one. AdOps does not call Google/Meta write APIs (that would require OAuth + developer token approval for every user); instead, this tool hands you the exact CSV rows those dashboards expect, and you paste them in. Perfect for the "pause anything with CPA over 50 and reallocate budget" workflow. Use platform=google with format=google_ads_csv (import into Google Ads Editor). Use platform=meta with format=meta_ads_csv (bulk edit in Meta Ads Manager Power Editor). Use json to pipe into n8n or your own automation. Use markdown for human review before acting. min_delta_pct filters out noise (e.g. 0.15 = only show changes >=15%).',
+    inputSchema: ExportRecommendationsInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  async (input) => {
+    try {
+      const result = await exportRecommendations(input);
+      if (result.file_written) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({
+              message: `Exported ${result.rows_exported} recommendations to ${result.file_written}`,
+              format: result.format,
+              summary: result.summary,
+              next_steps: result.next_steps,
+            }, null, 2),
+          }],
+        };
+      }
+      return {
+        content: [{
+          type: 'text' as const,
+          text: `# Export (${result.format}) — ${result.rows_exported} rows\n\n${result.content}\n\n---\nNext steps:\n${result.next_steps.map((s) => `- ${s}`).join('\n')}`,
+        }],
       };
     } catch (e) { return handleToolError(e); }
   },
