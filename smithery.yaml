@@ -1,0 +1,20 @@
+# Smithery manifest — AdOps MCP
+# CSV-first architecture: users import Google Ads / Meta Ads CSV exports
+# locally via ad_csv_import and every other tool operates on that data.
+# No OAuth, no developer tokens, no credentials required.
+
+runtime: "container"
+
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "./"
+
+startCommand:
+  type: "http"
+
+configSchema:
+  type: object
+  additionalProperties: false
+  properties: {}
+
+exampleConfig: {}
