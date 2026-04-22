@@ -63,9 +63,13 @@ describe('Budget Optimizer', () => {
     const camp = makeCampaign('google', 'Star Campaign', 50);
     await store.addCampaign(camp);
 
-    // 7 days of high ROAS data
-    for (let i = 1; i <= 7; i++) {
-      await store.addMetrics(makeMetrics(camp.id, 'google', `2026-04-0${i}`, 50, 10, 300));
+    // 7 days of high ROAS data, anchored to "today" so the analyzer's 7-day window
+    // (which uses real current date) captures them regardless of when tests run.
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today.getTime() - i * 86400000);
+      const dateStr = d.toISOString().slice(0, 10);
+      await store.addMetrics(makeMetrics(camp.id, 'google', dateStr, 50, 10, 300));
     }
 
     const analysis = await analyzeBudget('maximize_roas', undefined, store);
@@ -78,8 +82,11 @@ describe('Budget Optimizer', () => {
     const camp = makeCampaign('meta', 'No Conversions', 100);
     await store.addCampaign(camp);
 
-    for (let i = 1; i <= 7; i++) {
-      await store.addMetrics(makeMetrics(camp.id, 'meta', `2026-04-0${i}`, 100, 0, 0));
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today.getTime() - i * 86400000);
+      const dateStr = d.toISOString().slice(0, 10);
+      await store.addMetrics(makeMetrics(camp.id, 'meta', dateStr, 100, 0, 0));
     }
 
     const analysis = await analyzeBudget('maximize_roas', undefined, store);
