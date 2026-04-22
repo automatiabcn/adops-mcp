@@ -1,28 +1,33 @@
 {
   "name": "adops-mcp",
   "displayName": "AdOps MCP",
-  "description": "Cross-platform ad management for Google Ads and Meta Ads. Campaign CRUD, unified reporting, budget optimization, anomaly detection, A/B testing, spend forecasting. 14 tools, 4 resources.",
-  "version": "1.0.1",
+  "description": "CSV-first analytics and optimization for Google Ads + Meta Ads. Import CSV exports from your ad dashboards (no OAuth, no developer tokens), then run unified cross-platform reporting, budget optimization, anomaly detection, A/B testing, spend forecasting, and industry benchmarks. Export recommendations as Google Ads Editor or Meta Ads Manager bulk-edit CSVs. 17 tools, 4 resources, 3 prompts.",
+  "version": "1.3.0",
+  "license": "MIT",
+  "repository": "https://github.com/enzoemir1/adops-mcp",
   "tools": [
-    { "name": "platform_connect", "description": "Register ad platform connection" },
-    { "name": "campaign_list", "description": "List campaigns across platforms" },
-    { "name": "campaign_create", "description": "Create new campaign" },
-    { "name": "campaign_update", "description": "Update campaign settings" },
-    { "name": "campaign_pause_resume", "description": "Batch pause or resume campaigns" },
-    { "name": "ads_report", "description": "Cross-platform performance report" },
-    { "name": "budget_analyze", "description": "Budget analysis with AI recommendations" },
-    { "name": "budget_reallocate", "description": "Transfer budget between campaigns" },
-    { "name": "audience_insights", "description": "Audience demographic analysis" },
-    { "name": "creative_specs", "description": "Platform creative requirements" },
-    { "name": "anomaly_detect", "description": "Performance anomaly detection" },
-    { "name": "ab_test_analyze", "description": "A/B test statistical analysis" },
-    { "name": "competitor_benchmark", "description": "Industry benchmark comparison" },
-    { "name": "forecast_spend", "description": "Spend and conversion forecasting" }
+    { "name": "ad_demo_seed", "description": "Seed realistic cross-platform demo portfolio (8 campaigns, 30 days metrics) for evaluation" },
+    { "name": "ad_csv_import", "description": "Import Google Ads Editor or Meta Ads Manager CSV export — every other tool operates on this data" },
+    { "name": "ads_export_recommendations", "description": "Export budget_analyze recommendations as Google Ads Editor CSV, Meta Ads Manager CSV, JSON, or Markdown — one bulk-paste action" },
+    { "name": "platform_connect", "description": "Register a platform connection manually (alternative to CSV import)" },
+    { "name": "campaign_list", "description": "List and filter campaigns across all imported platforms" },
+    { "name": "campaign_create", "description": "Add a campaign for what-if planning" },
+    { "name": "campaign_update", "description": "Update local campaign settings (budget, status, bidding, schedule)" },
+    { "name": "campaign_pause_resume", "description": "Batch pause/resume up to 50 campaigns" },
+    { "name": "ads_report", "description": "Unified cross-platform performance report (CTR, CPC, CPM, ROAS, CPA)" },
+    { "name": "budget_analyze", "description": "Budget allocation analysis with AI-generated scaling/pausing/reallocation recommendations" },
+    { "name": "budget_reallocate", "description": "Transfer budget between campaigns across platforms" },
+    { "name": "audience_insights", "description": "Demographic, geographic, device breakdowns" },
+    { "name": "creative_specs", "description": "Platform-specific image, video, text requirements reference" },
+    { "name": "anomaly_detect", "description": "Statistical anomaly detection (CPC spikes, CTR drops, spend surges)" },
+    { "name": "ab_test_analyze", "description": "A/B test comparison with statistical significance scoring" },
+    { "name": "competitor_benchmark", "description": "Compare metrics against 9-vertical industry averages" },
+    { "name": "forecast_spend", "description": "Spend, conversion, ROAS forecasting for 7/14/30 days" }
   ],
   "resources": [
-    { "uri": "ads://overview", "description": "Cross-platform dashboard" },
-    { "uri": "ads://campaigns", "description": "Active campaigns" },
-    { "uri": "ads://budget", "description": "Budget allocation" },
-    { "uri": "ads://alerts", "description": "Performance alerts" }
+    { "uri": "ads://overview", "description": "Cross-platform dashboard summary" },
+    { "uri": "ads://campaigns", "description": "All active campaigns with key metrics" },
+    { "uri": "ads://budget", "description": "Budget allocation across platforms" },
+    { "uri": "ads://alerts", "description": "Recent performance anomalies and warnings" }
   ]
 }
