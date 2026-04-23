@@ -1,0 +1,76 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["enzoemir1"],
+  "name": "adops-mcp",
+  "description": "CSV-first analytics + optimization for Google Ads and Meta Ads. Import CSV exports locally, run cross-platform reports, anomaly detection, budget optimization, A/B analysis, forecasting. Export bulk-edit recommendations as Google Ads Editor / Meta Ads Manager CSVs. No OAuth, no developer tokens. 17 tools, 4 resources, 3 prompts.",
+  "tools": {
+    "ad_demo_seed": {
+      "enabled": true,
+      "description": "Seed a realistic cross-platform demo portfolio (8 campaigns across Google + Meta, 30 days of daily metrics, pre-computed anomaly alerts) so every downstream tool returns meaningful output without any credentials."
+    },
+    "ad_csv_import": {
+      "enabled": true,
+      "description": "Import Google Ads Editor or Meta Ads Manager CSV exports. Parses campaigns and day-segmented metrics, handles US + European number formats, BOM, auto-detects delimiter and currency. After import, every other tool operates on the user's real data."
+    },
+    "ads_export_recommendations": {
+      "enabled": true,
+      "description": "Export budget_analyze recommendations as Google Ads Editor CSV, Meta Ads Manager CSV, JSON (for n8n/Zapier), or Markdown (for standup docs). Filters: min_delta_pct, limit, platform. Users paste the CSV directly into their dashboards for bulk action."
+    },
+    "platform_connect": {
+      "enabled": true,
+      "description": "Register a platform connection manually (alternative to CSV import) for scripted workflows. Stores platform + account label; actual data still flows through ad_csv_import."
+    },
+    "campaign_list": {
+      "enabled": true,
+      "description": "List and filter campaigns across all imported platforms. Filters: platform, status, query (free-text on name), objective. Pagination: limit (default 20, max 100) and offset."
+    },
+    "campaign_create": {
+      "enabled": true,
+      "description": "Add a campaign manually for what-if planning. Useful for modeling budget allocation before you import the real data or before you push changes to Google/Meta."
+    },
+    "campaign_update": {
+      "enabled": true,
+      "description": "Update local campaign fields (daily_budget, status, bidding_strategy, schedule, targeting). Local-only — does not push to Google/Meta; use ads_export_recommendations to generate a bulk-edit CSV instead."
+    },
+    "campaign_pause_resume": {
+      "enabled": true,
+      "description": "Batch pause or resume up to 50 campaigns in a single call. Local-only state change; export via ads_export_recommendations to apply in the dashboards."
+    },
+    "ads_report": {
+      "enabled": true,
+      "description": "Unified cross-platform performance report: CTR, CPC, CPM, ROAS, CPA, conversion rate, spend, impressions, clicks. Group by campaign, platform, or both. Date-range filterable."
+    },
+    "budget_analyze": {
+      "enabled": true,
+      "description": "Budget allocation analysis across platforms with AI-generated recommendations: increase (high ROAS), decrease (weak ROAS with spend), reallocate (moving budget between campaigns), pause (zero-conversion with significant spend). Uses optimization_goal: maximize_roas / maximize_conversions / minimize_cpa."
+    },
+    "budget_reallocate": {
+      "enabled": true,
+      "description": "Transfer budget between two campaigns across platforms. Returns before/after budgets and expected impact (projected conversions delta based on historical ROAS)."
+    },
+    "audience_insights": {
+      "enabled": true,
+      "description": "Demographic, geographic, and device breakdowns. Uses the metric rows' reach/frequency (Meta) or attribution data when present. Returns top segments by ROAS and CPA."
+    },
+    "creative_specs": {
+      "enabled": true,
+      "description": "Platform-specific image, video, and text requirements reference (aspect ratios, max file size, character limits) for Google Ads + Meta Ads placements."
+    },
+    "anomaly_detect": {
+      "enabled": true,
+      "description": "Statistical anomaly detection across recent metrics. Flags CPC spikes, CTR drops, conversion-rate dives, unusual spend. Configurable sensitivity (low/medium/high) and severity sort. Returns actionable alerts per campaign."
+    },
+    "ab_test_analyze": {
+      "enabled": true,
+      "description": "Compare two campaigns (the A and B variants) with statistical significance testing. Returns winner, confidence level, uplift %, and sample-size adequacy flag."
+    },
+    "competitor_benchmark": {
+      "enabled": true,
+      "description": "Compare your campaign metrics against industry averages across 9 verticals (ecommerce, SaaS, B2B services, healthcare, education, travel, real estate, finance, consumer goods). Returns delta vs benchmark per metric."
+    },
+    "forecast_spend": {
+      "enabled": true,
+      "description": "Forecast spend, conversions, and ROAS for the next 7, 14, or 30 days based on recent trends. Returns projected ranges with confidence interval."
+    }
+  }
+}
