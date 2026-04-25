@@ -37,7 +37,7 @@ import {
   type UnifiedCampaign, type Platform,
 } from './models/adops.js';
 
-const SERVER_VERSION = '1.3.0';
+const SERVER_VERSION = '1.3.1';
 const TOOL_COUNT = 17;
 const RESOURCE_COUNT = 4;
 
