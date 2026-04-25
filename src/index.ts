@@ -16,7 +16,17 @@ import { importGoogleAdsCsv } from './services/csv-import/google-ads.js';
 import { importMetaAdsCsv } from './services/csv-import/meta-ads.js';
 import { exportRecommendations } from './services/export-recommendations.js';
 import { promises as fs } from 'node:fs';
+import { homedir } from 'node:os';
+import { join as pathJoin } from 'node:path';
+import { ensureProOrReject, type LicenseConfig } from './services/license.js';
 import { handleToolError } from './utils/errors.js';
+
+const LICENSE_CONFIG: LicenseConfig = {
+  productId: 1004798,
+  bundleProductId: 1004800,
+  cacheDir: pathJoin(homedir(), '.config', 'adops-mcp'),
+  buyUrl: 'https://automatiabcn.lemonsqueezy.com/buy/1525c929-832c-4472-a88a-58edbfa4e87b',
+};
 import {
   PlatformSchema, CampaignStatusSchema, CampaignObjectiveSchema, BiddingStrategySchema,
   PlatformConnectInputSchema, CampaignListInputSchema, CampaignCreateInputSchema,
@@ -154,6 +164,8 @@ server.registerTool(
   },
   async (input) => {
     try {
+      const reject = await ensureProOrReject(LICENSE_CONFIG, 'ads_export_recommendations');
+      if (reject) return reject;
       const result = await exportRecommendations(input);
       if (result.file_written) {
         return {
@@ -428,6 +440,8 @@ server.registerTool(
   },
   async ({ platform, optimization_goal }) => {
     try {
+      const reject = await ensureProOrReject(LICENSE_CONFIG, 'budget_analyze');
+      if (reject) return reject;
       const analysis = await analyzeBudget(optimization_goal, platform);
       return { content: [{ type: 'text' as const, text: JSON.stringify(analysis, null, 2) }] };
     } catch (e) { return handleToolError(e); }
@@ -514,6 +528,8 @@ server.registerTool(
   },
   async ({ platform, sensitivity, lookback_days }) => {
     try {
+      const reject = await ensureProOrReject(LICENSE_CONFIG, 'anomaly_detect');
+      if (reject) return reject;
       const alerts = await detectAnomalies(sensitivity, lookback_days, platform);
       return { content: [{ type: 'text' as const, text: JSON.stringify({
         anomalies_found: alerts.length,
@@ -541,6 +557,8 @@ server.registerTool(
   },
   async ({ campaign_id_a, campaign_id_b, primary_metric }) => {
     try {
+      const reject = await ensureProOrReject(LICENSE_CONFIG, 'ab_test_analyze');
+      if (reject) return reject;
       const result = await analyzeABTest(campaign_id_a, campaign_id_b, primary_metric);
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
     } catch (e) { return handleToolError(e); }
@@ -559,6 +577,8 @@ server.registerTool(
   },
   async ({ industry, platform }) => {
     try {
+      const reject = await ensureProOrReject(LICENSE_CONFIG, 'competitor_benchmark');
+      if (reject) return reject;
       const benchmark = await generateBenchmark(industry, platform);
       return { content: [{ type: 'text' as const, text: JSON.stringify(benchmark, null, 2) }] };
     } catch (e) { return handleToolError(e); }
@@ -577,6 +597,8 @@ server.registerTool(
   },
   async ({ period_days, platform }) => {
     try {
+      const reject = await ensureProOrReject(LICENSE_CONFIG, 'forecast_spend');
+      if (reject) return reject;
       const forecast = await forecastSpend(parseInt(period_days), platform);
       return { content: [{ type: 'text' as const, text: JSON.stringify(forecast, null, 2) }] };
     } catch (e) { return handleToolError(e); }

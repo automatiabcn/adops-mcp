@@ -218,6 +218,43 @@ npm run inspect    # Open MCP Inspector
 
 ---
 
+## Pro License
+
+AdOps ships in **Free mode** — `ad_demo_seed`, `ad_csv_import`, `platform_connect`, `campaign_list`, `campaign_create`, `campaign_update`, `campaign_pause_resume`, `ads_report`, `budget_reallocate`, `audience_insights`, and `creative_specs` are open. The following tools require a **Pro license**:
+
+- `ads_export_recommendations` — bulk-edit CSV export for Google Ads Editor / Meta Ads Manager
+- `budget_analyze` — AI budget allocation analysis with action recommendations
+- `anomaly_detect` — statistical anomaly detection
+- `ab_test_analyze` — A/B test z-test with significance + uplift
+- `forecast_spend` — 7/14/30-day spend & ROAS forecast
+- `competitor_benchmark` — industry benchmark comparison
+
+**Buy a Pro License (€24, lifetime, 3 machines):** https://automatiabcn.lemonsqueezy.com/buy/1525c929-832c-4472-a88a-58edbfa4e87b
+
+Or get the **[Indie MCP Stack Bundle](https://automatiabcn.lemonsqueezy.com/buy/55e932fd-8319-47f0-8e95-0b86a29f2617)** (€69, all 4 servers).
+
+```bash
+export LEMONSQUEEZY_LICENSE_KEY=YOUR-KEY-HERE
+```
+
+Or in your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "adops-mcp": {
+      "command": "npx",
+      "args": ["-y", "adops-mcp-server"],
+      "env": { "LEMONSQUEEZY_LICENSE_KEY": "YOUR-KEY-HERE" }
+    }
+  }
+}
+```
+
+Validation is cached locally for 24 h — fully offline-capable after first run.
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
