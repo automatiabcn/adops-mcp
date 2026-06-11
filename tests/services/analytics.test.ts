@@ -150,9 +150,11 @@ describe('Analytics Engine', () => {
     const camp = makeCampaign('google');
     await store.addCampaign(camp);
 
-    // Add 7 days of data
+    // Add 7 days of data, dated relative to now so they always fall within
+    // forecastSpend()'s lookback window (otherwise the test is a time-bomb).
     for (let i = 1; i <= 7; i++) {
-      await store.addMetrics(makeMetrics(camp.id, 'google', `2026-04-0${i}`, { spend: 100, conversions: 10, conversion_value: 400 }));
+      const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+      await store.addMetrics(makeMetrics(camp.id, 'google', d, { spend: 100, conversions: 10, conversion_value: 400 }));
     }
 
     const forecast = await forecastSpend(14, undefined, store);

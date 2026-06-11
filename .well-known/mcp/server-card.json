@@ -2,7 +2,7 @@
   "name": "adops-mcp",
   "displayName": "AdOps MCP",
   "description": "CSV-first analytics and optimization for Google Ads + Meta Ads. Import CSV exports from your ad dashboards (no OAuth, no developer tokens), then run unified cross-platform reporting, budget optimization, anomaly detection, A/B testing, spend forecasting, and industry benchmarks. Export recommendations as Google Ads Editor or Meta Ads Manager bulk-edit CSVs. 17 tools, 4 resources, 3 prompts.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "license": "MIT",
   "repository": "https://github.com/enzoemir1/adops-mcp",
   "tools": [

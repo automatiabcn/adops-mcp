@@ -176,7 +176,7 @@ All other behavior is controlled via tool arguments.
 | Tier | Price | Features |
 |------|-------|----------|
 | Free | $0 | 1 imported CSV per day, demo mode, all 17 tools read-only |
-| Pro | $24/mo | Unlimited imports, full CRUD, all analytics tools |
+| Pro | €24 lifetime | Unlimited imports, full CRUD, all analytics tools |
 | Agency | $59/mo | Multi-account, white-label reports, priority support |
 
 Available via [GitHub](https://github.com/enzoemir1/adops-mcp) (self-hosted, free) or the MCPize marketplace (managed).
