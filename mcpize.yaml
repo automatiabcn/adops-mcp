@@ -16,26 +16,33 @@ startCommand:
     PORT: "8080"
 
 secrets:
+  - name: LEMONSQUEEZY_LICENSE_KEY
+    required: false
+    description: "LemonSqueezy Pro license key — unlocks Pro tier (Free tier without it)"
+
+  # v1.4 roadmap (BYOK) — not yet read by the server.
+  # Reserved for a future live-sync integration. Current release uses CSV import.
   - name: GOOGLE_ADS_DEVELOPER_TOKEN
     required: false
-    description: "Google Ads API developer token"
+    description: "[v1.4 roadmap — not yet read] Google Ads API developer token"
   - name: GOOGLE_ADS_CLIENT_ID
     required: false
-    description: "Google Ads OAuth2 client ID"
+    description: "[v1.4 roadmap — not yet read] Google Ads OAuth2 client ID"
   - name: GOOGLE_ADS_CLIENT_SECRET
     required: false
-    description: "Google Ads OAuth2 client secret"
+    description: "[v1.4 roadmap — not yet read] Google Ads OAuth2 client secret"
   - name: GOOGLE_ADS_REFRESH_TOKEN
     required: false
-    description: "Google Ads OAuth2 refresh token"
+    description: "[v1.4 roadmap — not yet read] Google Ads OAuth2 refresh token"
 
 credentials:
+  # v1.4 roadmap (BYOK) — not yet read by the server.
   - name: META_APP_ID
     required: false
-    description: "Meta Marketing API App ID"
+    description: "[v1.4 roadmap — not yet read] Meta Marketing API App ID"
   - name: META_APP_SECRET
     required: false
-    description: "Meta Marketing API App Secret"
+    description: "[v1.4 roadmap — not yet read] Meta Marketing API App Secret"
   - name: META_ACCESS_TOKEN
     required: false
-    description: "Meta system user access token"
+    description: "[v1.4 roadmap — not yet read] Meta system user access token"
